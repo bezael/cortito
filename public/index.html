@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>cortito</title>
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <main>
@@ -21,6 +22,7 @@
 
     <section id="result" hidden>
       <a id="short" class="short" target="_blank" rel="noopener"></a>
+      <button id="copy" type="button">Copiar</button>
       <p class="stats">Clics: <strong id="clicks">0</strong></p>
     </section>
   </main>
@@ -32,6 +34,7 @@
     const result = document.getElementById("result");
     const short = document.getElementById("short");
     const clicks = document.getElementById("clicks");
+    const copy = document.getElementById("copy");
     let currentCode = null;
 
     form.addEventListener("submit", async (event) => {
@@ -57,6 +60,12 @@
       short.textContent = data.shortUrl;
       clicks.textContent = "0";
       result.hidden = false;
+    });
+
+    copy.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(short.href);
+      copy.textContent = "Copiado";
+      setTimeout(() => (copy.textContent = "Copiar"), 1500);
     });
 
     // Al volver a esta pestaña después de abrir el enlace, actualiza el contador.

@@ -16,6 +16,11 @@ export function createApp(db: Database, options: AppOptions = {}) {
 
   app.get("/", async (c) => c.html(await Bun.file(join(PUBLIC_DIR, "index.html")).text()));
 
+  app.get("/styles.css", (c) => {
+    c.header("content-type", "text/css; charset=utf-8");
+    return c.body(Bun.file(join(PUBLIC_DIR, "styles.css")).stream());
+  });
+
   app.post("/api/links", async (c) => {
     const body = await c.req.json().catch(() => null);
     const result = validateUrl(body?.url);
