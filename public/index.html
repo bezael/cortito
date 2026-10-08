@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cortito</title>
+</head>
+<body>
+  <main>
+    <h1>cortito</h1>
+    <p class="lead">Pega una URL larga y te doy una corta.</p>
+
+    <form id="form">
+      <label for="url">URL</label>
+      <div class="row">
+        <input id="url" name="url" type="text" placeholder="https://..." autocomplete="off" required>
+        <button type="submit">Acortar</button>
+      </div>
+      <p id="error" class="error" role="alert" hidden></p>
+    </form>
+
+    <section id="result" hidden>
+      <a id="short" class="short" target="_blank" rel="noopener"></a>
+      <p class="stats">Clics: <strong id="clicks">0</strong></p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("form");
+    const input = document.getElementById("url");
+    const error = document.getElementById("error");
+    const result = document.getElementById("result");
+    const short = document.getElementById("short");
+    const clicks = document.getElementById("clicks");
+    let currentCode = null;
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      error.hidden = true;
+
+      const response = await fetch("/api/links", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: input.value }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        error.textContent = data.error;
+        error.hidden = false;
+        result.hidden = true;
+        return;
+      }
+
+      currentCode = data.code;
+      short.href = data.shortUrl;
+      short.textContent = data.shortUrl;
+      clicks.textContent = "0";
+      result.hidden = false;
+    });
+
+    // Al volver a esta pestaña después de abrir el enlace, actualiza el contador.
+    async function refreshClicks() {
+      if (!currentCode) return;
+      const response = await fetch(`/api/links/${currentCode}/stats`);
+      if (response.ok) clicks.textContent = (await response.json()).clicks;
+    }
+    window.addEventListener("focus", refreshClicks);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshClicks();
+    });
+  </script>
+</body>
+</html>

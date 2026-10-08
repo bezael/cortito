@@ -4,10 +4,11 @@ import { generateCode } from "./code";
 export type Link = {
   code: string;
   url: string;
+  clicks: number;
   createdAt: string;
 };
 
-type LinkRow = { code: string; url: string; created_at: string };
+type LinkRow = { code: string; url: string; clicks: number; created_at: string };
 
 const MAX_ATTEMPTS = 5;
 
@@ -18,16 +19,23 @@ export function createLink(db: Database, url: string): Link {
 
     const createdAt = new Date().toISOString();
     db.query("INSERT INTO links (code, url, created_at) VALUES (?, ?, ?)").run(code, url, createdAt);
-    return { code, url, createdAt };
+    return { code, url, clicks: 0, createdAt };
   }
   throw new Error(`No se ha podido generar un código libre tras ${MAX_ATTEMPTS} intentos.`);
 }
 
 export function findLink(db: Database, code: string): Link | null {
-  const row = db.query("SELECT code, url, created_at FROM links WHERE code = ?").get(code) as LinkRow | null;
+  const row = db.query("SELECT code, url, clicks, created_at FROM links WHERE code = ?").get(code) as LinkRow | null;
+  return row ? toLink(row) : null;
+}
+
+export function registerClick(db: Database, code: string): Link | null {
+  const row = db
+    .query("UPDATE links SET clicks = clicks + 1 WHERE code = ? RETURNING code, url, clicks, created_at")
+    .get(code) as LinkRow | null;
   return row ? toLink(row) : null;
 }
 
 function toLink(row: LinkRow): Link {
-  return { code: row.code, url: row.url, createdAt: row.created_at };
+  return { code: row.code, url: row.url, clicks: row.clicks, createdAt: row.created_at };
 }
