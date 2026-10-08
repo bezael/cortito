@@ -1,11 +1,6 @@
-const ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 export const CODE_LENGTH = 6;
 
-export function generateCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
-  let code = "";
-  for (const byte of bytes) {
-    code += ALPHABET[byte % ALPHABET.length];
-  }
-  return code;
+// El código sale del hash de la URL: así no hace falta consultar la base de datos.
+export function generateCode(url: string): string {
+  return Bun.hash(url).toString(36).padStart(CODE_LENGTH, "0").slice(0, CODE_LENGTH);
 }
