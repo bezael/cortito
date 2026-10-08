@@ -2,7 +2,6 @@ import type { Database } from "bun:sqlite";
 import { join } from "node:path";
 import { Hono } from "hono";
 import { createLink, findLink, registerClick } from "./links";
-import { validateUrl } from "./validation";
 
 const PUBLIC_DIR = join(import.meta.dir, "..", "public");
 const CODE_PATTERN = "{[A-Za-z0-9]{6}}";
@@ -10,6 +9,16 @@ const CODE_PATTERN = "{[A-Za-z0-9]{6}}";
 export type AppOptions = {
   baseUrl?: string;
 };
+
+function isHttpUrl(value: string): boolean {
+  if (value.length > 2048) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export function createApp(db: Database, options: AppOptions = {}) {
   const app = new Hono();
@@ -23,12 +32,12 @@ export function createApp(db: Database, options: AppOptions = {}) {
 
   app.post("/api/links", async (c) => {
     const body = await c.req.json().catch(() => null);
-    const result = validateUrl(body?.url);
-    if (!result.ok) {
-      return c.json({ error: result.error }, 400);
+    const url = typeof body?.url === "string" ? body.url.trim() : "";
+    if (!isHttpUrl(url)) {
+      return c.json({ error: "La URL no es válida. Solo se aceptan URLs http o https." }, 400);
     }
 
-    const link = createLink(db, result.value);
+    const link = createLink(db, new URL(url).href);
     const baseUrl = options.baseUrl ?? new URL(c.req.url).origin;
     return c.json({ code: link.code, shortUrl: `${baseUrl}/${link.code}` }, 201);
   });

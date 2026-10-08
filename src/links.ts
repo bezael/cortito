@@ -12,7 +12,21 @@ type LinkRow = { code: string; url: string; clicks: number; created_at: string }
 
 const MAX_ATTEMPTS = 5;
 
+function isHttpUrl(value: string): boolean {
+  if (value.length > 2048) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function createLink(db: Database, url: string): Link {
+  if (!isHttpUrl(url)) {
+    throw new Error(`URL no permitida: ${url}`);
+  }
+
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const code = generateCode();
     if (findLink(db, code)) continue;
